@@ -1,52 +1,373 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Daily Tasks</title>
-<style>
-:root{--bg:#f4f6f8;--card:#fff;--text:#222;--border:#ddd}
-.dark{--bg:#121212;--card:#1e1e1e;--text:#eee;--border:#444}
-body{margin:0;font-family:Arial;background:var(--bg);color:var(--text)}
-.header{display:flex;gap:8px;align-items:center;padding:10px;background:var(--card);border-bottom:1px solid var(--border)}
-button,input{padding:8px}
-.layout{display:grid;grid-template-columns:280px 1fr;height:calc(100vh - 60px)}
-.panel{border-right:1px solid var(--border);overflow:auto;padding:10px}
-.main{padding:10px;overflow:auto}
-.day{padding:8px;border:1px solid var(--border);margin:4px 0;cursor:pointer}
-.task{margin-left:20px}
-.row{display:flex;align-items:center;gap:6px;margin:4px 0}
-.progress{font-size:12px;opacity:.7}
-pre{background:#000;color:#0f0;padding:10px;max-height:250px;overflow:auto}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Tasks</title>
+    <style>
+        :root {
+            --bg: #f8f9fa;
+            --card: #ffffff;
+            --text: #212529;
+            --text-secondary: #6c757d;
+            --border: #e9ecef;
+            --primary: #4361ee;
+            --primary-hover: #3a56d4;
+            --danger: #e63946;
+            --success: #2a9d8f;
+            --radius: 12px;
+            --shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+        }
+
+        .dark {
+            --bg: #121214;
+            --card: #1a1a1e;
+            --text: #f8f9fa;
+            --text-secondary: #adb5bd;
+            --border: #2a2a30;
+            --primary: #5c7cfa;
+            --primary-hover: #748ffc;
+            --shadow: 0 4px 6px -1px rgba(0,0,0,0.3);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            padding-bottom: 40px;
+        }
+
+        /* Header e Top Bar */
+        .header {
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 16px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            box-shadow: var(--shadow);
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .header-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* Inputs e Botões */
+        input, button, select {
+            font-family: inherit;
+            font-size: 14px;
+            padding: 10px 14px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            background: var(--card);
+            color: var(--text);
+            outline: none;
+            width: 100%;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+        }
+
+        button {
+            cursor: pointer;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            border: 1px solid var(--border);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+        }
+        .btn-primary:hover { background: var(--primary-hover); }
+
+        .btn-danger { background: transparent; color: var(--danger); border-color: transparent; }
+        .btn-danger:hover { background: rgba(230, 57, 70, 0.1); }
+
+        /* Custom File Upload */
+        .file-upload {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            text-align: center;
+        }
+        .file-upload input[type=file] {
+            position: absolute;
+            left: 0; top: 0; opacity: 0;
+            width: 100%; height: 100%;
+            cursor: pointer;
+        }
+
+        /* Layout - Mobile First (Coluna única) */
+        .layout {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding: 16px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .card-section {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 16px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        h3 {
+            font-size: 1rem;
+            margin-bottom: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Histórico / Dias */
+        .history-list {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .day {
+            padding: 8px 16px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            cursor: pointer;
+            white-space: nowrap;
+            font-weight: 500;
+            font-size: 14px;
+            scroll-snap-align: start;
+        }
+
+        .day:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Input de Nova Tarefa */
+        .task-input-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            margin-bottom: 16px;
+        }
+        .task-input-group input { flex: 1; }
+        .task-input-group button { width: auto; }
+
+        /* Árvore de Tarefas */
+        .task {
+            margin-left: 12px;
+            border-left: 2px solid var(--border);
+            padding-left: 12px;
+            margin-top: 8px;
+        }
+
+        .row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+        }
+
+        .row input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary);
+            cursor: pointer;
+        }
+
+        .task-title {
+            flex: 1;
+            font-size: 15px;
+        }
+
+        .row input:checked + .task-title {
+            text-decoration: line-through;
+            color: var(--text-secondary);
+        }
+
+        .btn-toggle {
+            width: 24px;
+            height: 24px;
+            padding: 0;
+            border-radius: 50%;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+        }
+
+        .progress {
+            font-size: 11px;
+            background: var(--bg);
+            padding: 2px 6px;
+            border-radius: 10px;
+            color: var(--text-secondary);
+            font-weight: bold;
+        }
+
+        .task-actions {
+            display: flex;
+            gap: 4px;
+        }
+        .task-actions button {
+            width: 28px;
+            height: 28px;
+            padding: 0;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+
+        /* Resultados de busca */
+        #searchResults div {
+            padding: 8px;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* JSON debug */
+        pre {
+            background: #1e1e24;
+            color: #38bdf8;
+            padding: 12px;
+            border-radius: 8px;
+            max-height: 200px;
+            overflow: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        /* Desktop Layout Override (Telas maiores que 768px) */
+        @media (min-width: 768px) {
+            .layout {
+                display: grid;
+                grid-template-columns: 260px 1fr;
+                align-items: start;
+                max-width: 1200px;
+            }
+
+            .history-list {
+                flex-direction: column;
+                overflow-x: visible;
+            }
+
+            .day {
+                width: 100%;
+                border-radius: var(--radius);
+                text-align: left;
+            }
+
+            .header-top {
+                max-width: 1200px;
+                margin: 0 auto 12px auto;
+            }
+            .header-bottom-wrapper {
+                display: flex;
+                justify-content: space-between;
+                max-width: 1200px;
+                margin: 0 auto;
+                gap: 16px;
+            }
+            .actions-grid {
+                flex: 1;
+                margin-bottom: 0;
+            }
+            .search-box {
+                width: 350px;
+            }
+        }
+    </style>
 </head>
 <body>
+
 <div class="header">
-<button onclick="newDay()">Novo Dia</button>
-<button onclick="copyPending()">Copiar Pendências</button>
-<button onclick="exportDay()">Exportar Dia</button>
-<button onclick="exportAll()">Exportar Tudo</button>
-<button onclick="toggleTheme()">Tema</button>
-<input id="search" placeholder="Buscar..." oninput="renderSearch()">
-<input type="file" onchange="importJson(event)">
+    <div class="header-top">
+        <div class="header-title">⚡ Daily Tasks</div>
+        <button onclick="toggleTheme()" style="width: auto; padding: 6px 12px;">🌓 Tema</button>
+    </div>
+    <div class="header-bottom-wrapper">
+        <div class="actions-grid">
+            <button onclick="newDay()" class="btn-primary">＋ Novo Dia</button>
+            <button onclick="copyPending()">📋 Copiar Pendentes</button>
+            <button onclick="exportDay()">📤 Exportar Dia</button>
+            <button onclick="exportAll()">📦 Exportar Tudo</button>
+            <div class="file-upload">
+                <button style="width: 100%;">📥 Importar</button>
+                <input type="file" onchange="importJson(event)">
+            </div>
+        </div>
+        <div class="search-box">
+            <input id="search" placeholder="🔍 Buscar tarefa..." oninput="renderSearch()">
+        </div>
+    </div>
 </div>
 
 <div class="layout">
-<div class="panel">
-<h3>Histórico</h3>
-<div id="history"></div>
-<div id="searchResults"></div>
-</div>
-<div class="main">
-<input type="date" id="date" onchange="loadDay(this.value)">
-<div>
-<input id="newTask" placeholder="Nova tarefa">
-<button onclick="addTask()">Adicionar</button>
-</div>
-<div id="tasks"></div>
-<h3>JSON</h3>
-<pre id="json"></pre>
-</div>
+    <div class="card-section">
+        <h3>Histórico</h3>
+        <div id="history" class="history-list"></div>
+        <div id="searchResults"></div>
+    </div>
+
+    <div class="card-section">
+        <h3>Tarefas do Dia</h3>
+        <input type="date" id="date" onchange="loadDay(this.value)" style="margin-bottom: 12px; font-weight: bold;">
+        
+        <div class="task-input-group">
+            <input id="newTask" placeholder="Escreva uma nova tarefa raiz...">
+            <button onclick="addTask()" class="btn-primary">Adicionar</button>
+        </div>
+
+        <div id="tasks"></div>
+        
+        <h3 style="margin-top: 24px;">Visualização JSON</h3>
+        <pre id="json">// O código JSON exportado aparecerá aqui...</pre>
+    </div>
 </div>
 
 <script>
@@ -56,132 +377,131 @@ let current=today();
 
 function save(){localStorage.setItem(KEY,JSON.stringify(db));}
 function today(){return new Date().toISOString().split('T')[0];}
-
-function ensureDay(d){
- if(!db.todos[d]) db.todos[d]={date:d,tasks:[]};
- save();
-}
+function ensureDay(d){ if(!db.todos[d]) db.todos[d]={date:d,tasks:[]}; save();}
 function uid(){return Date.now()+Math.random().toString(36).slice(2);}
-
 function newDay(){ensureDay(today());loadDay(today());renderHistory();}
 function loadDay(d){ensureDay(d);current=d;date.value=d;renderTasks();}
 
-function addTask(parent=null){
- const txt=document.getElementById('newTask').value.trim();
- if(!txt)return;
- const t={id:uid(),title:txt,done:false,open:true,children:[]};
- if(parent) parent.children.push(t);
- else db.todos[current].tasks.push(t);
- document.getElementById('newTask').value='';
- save();renderTasks();
+function addTask(parent=null){ 
+    const txt=document.getElementById('newTask').value.trim(); 
+    if(!txt)return; 
+    const t={id:uid(),title:txt,done:false,open:true,children:[]}; 
+    if(parent) parent.children.push(t); 
+    else db.todos[current].tasks.push(t); 
+    document.getElementById('newTask').value=''; 
+    save();renderTasks();
 }
 
-function renderHistory(){
- history.innerHTML='';
- Object.keys(db.todos).sort().reverse().forEach(d=>{
-  const el=document.createElement('div');
-  el.className='day';
-  el.textContent=d;
-  el.onclick=()=>loadDay(d);
-  history.appendChild(el);
- });
+function renderHistory(){ 
+    history.innerHTML=''; 
+    Object.keys(db.todos).sort().reverse().forEach(d=>{  
+        const el=document.createElement('div');  
+        el.className='day';  
+        el.textContent=d;  
+        el.onclick=()=>loadDay(d);  
+        history.appendChild(el); 
+    });
 }
 
-function stats(t){
- let total=1,done=t.done?1:0;
- t.children.forEach(c=>{let s=stats(c);total+=s.total;done+=s.done});
- return {total,done};
+function stats(t){ 
+    let total=1,done=t.done?1:0; 
+    t.children.forEach(c=>{let s=stats(c);total+=s.total;done+=s.done}); 
+    return {total,done};
 }
 
-function renderNode(t,parentEl,parentRef){
- const div=document.createElement('div');
- div.className='task';
- const s=stats(t);
- div.innerHTML=`<div class=row>
- <button>${t.open?'▼':'▶'}</button>
- <input type=checkbox ${t.done?'checked':''}>
- <span>${t.title}</span>
- <span class=progress>${s.done}/${s.total}</span>
- <button>+</button>
- <button>x</button></div>`;
+function renderNode(t,parentEl,parentRef){ 
+    const div=document.createElement('div'); 
+    div.className='task'; 
+    const s=stats(t); 
+    div.innerHTML=`
+        <div class="row"> 
+            <button class="btn-toggle">${t.open?'▼':'▶'}</button> 
+            <input type="checkbox" ${t.done?'checked':''}> 
+            <span class="task-title">${t.title}</span> 
+            <span class="progress">${s.done}/${s.total}</span> 
+            <div class="task-actions">
+                <button class="btn-primary" title="Adicionar Subtarefa">＋</button> 
+                <button class="btn-danger" title="Excluir">✕</button>
+            </div>
+        </div>`;
 
- const [toggle,chk,, ,add,del]=div.querySelectorAll('button,input,span,span,button,button');
-
- toggle.onclick=()=>{t.open=!t.open;save();renderTasks();}
- chk.onchange=e=>{markRecursive(t,e.target.checked);save();renderTasks();}
- add.onclick=()=>{
-   const name=prompt("Subtarefa:");
-   if(name){t.children.push({id:uid(),title:name,done:false,open:true,children:[]});save();renderTasks();}
- }
- del.onclick=()=>{
-   const arr=parentRef||db.todos[current].tasks;
-   arr.splice(arr.indexOf(t),1);
-   save();renderTasks();
- }
-
- parentEl.appendChild(div);
- if(t.open){
-   t.children.forEach(c=>renderNode(c,parentEl,t.children));
- }
+    const [toggle,chk,,,add,del]=div.querySelectorAll('button,input,span,span,button,button');
+    
+    toggle.onclick=()=>{t.open=!t.open;save();renderTasks();} 
+    chk.onchange=e=>{markRecursive(t,e.target.checked);save();renderTasks();} 
+    add.onclick=()=>{   
+        const name=prompt("Subtarefa:");   
+        if(name){t.children.push({id:uid(),title:name,done:false,open:true,children:[]});save();renderTasks();} 
+    } 
+    del.onclick=()=>{   
+        const arr=parentRef||db.todos[current].tasks;   
+        arr.splice(arr.indexOf(t),1);   
+        save();renderTasks(); 
+    }
+    
+    parentEl.appendChild(div); 
+    if(t.open){   
+        t.children.forEach(c=>renderNode(c,parentEl,t.children)); 
+    }
 }
 
 function markRecursive(t,v){t.done=v;t.children.forEach(c=>markRecursive(c,v));}
 
-function renderTasks(){
- ensureDay(current);
- tasks.innerHTML='';
- db.todos[current].tasks.forEach(t=>renderNode(t,tasks,null));
- save();
+function renderTasks(){ 
+    ensureDay(current); 
+    tasks.innerHTML=''; 
+    db.todos[current].tasks.forEach(t=>renderNode(t,tasks,null)); 
+    save();
 }
 
 function exportDay(){json.textContent=JSON.stringify(db.todos[current],null,2);}
 function exportAll(){json.textContent=JSON.stringify(db,null,2);}
 
-function copyPending(){
- const dates=Object.keys(db.todos).sort();
- const idx=dates.indexOf(current);
- if(idx<1)return;
- const prev=db.todos[dates[idx-1]].tasks;
- ensureDay(current);
- function clonePending(arr){
-   return arr.filter(x=>!x.done).map(x=>({
-    id:uid(),title:x.title,done:false,open:true,children:clonePending(x.children)
-   }));
- }
- db.todos[current].tasks.push(...clonePending(prev));
- save();renderTasks();
+function copyPending(){ 
+    const dates=Object.keys(db.todos).sort(); 
+    const idx=dates.indexOf(current); 
+    if(idx<1)return; 
+    const prev=db.todos[dates[idx-1]].tasks; 
+    ensureDay(current); 
+    function clonePending(arr){   
+        return arr.filter(x=>!x.done).map(x=>({    
+            id:uid(),title:x.title,done:false,open:true,children:clonePending(x.children)   
+        })); 
+    } 
+    db.todos[current].tasks.push(...clonePending(prev)); 
+    save();renderTasks();
 }
 
-function renderSearch(){
- const q=search.value.toLowerCase();
- searchResults.innerHTML='';
- if(!q)return;
- function walk(node,date,path){
-   if(node.title.toLowerCase().includes(q)){
-     const d=document.createElement('div');
-     d.textContent=date+" > "+path+node.title;
-     searchResults.appendChild(d);
-   }
-   node.children.forEach(c=>walk(c,date,path+node.title+" > "));
- }
- Object.values(db.todos).forEach(day=>day.tasks.forEach(t=>walk(t,day.date,"")));
+function renderSearch(){ 
+    const q=search.value.toLowerCase(); 
+    searchResults.innerHTML=''; 
+    if(!q)return; 
+    function walk(node,date,path){   
+        if(node.title.toLowerCase().includes(q)){     
+            const d=document.createElement('div');     
+            d.textContent=date+" > "+path+node.title;     
+            searchResults.appendChild(d);   
+        }   
+        node.children.forEach(c=>walk(c,date,path+node.title+" > ")); 
+    } 
+    Object.values(db.todos).forEach(day=>day.tasks.forEach(t=>walk(t,day.date,"")));
 }
 
-function toggleTheme(){
- db.settings.dark=!db.settings.dark;
- document.body.classList.toggle('dark',db.settings.dark);
- save();
+function toggleTheme(){ 
+    db.settings.dark=!db.settings.dark; 
+    document.body.classList.toggle('dark',db.settings.dark); 
+    save();
 }
 
-function importJson(e){
- const f=e.target.files[0];
- if(!f)return;
- const r=new FileReader();
- r.onload=()=>{
-   db=JSON.parse(r.result);
-   save();location.reload();
- };
- r.readAsText(f);
+function importJson(e){ 
+    const f=e.target.files[0]; 
+    if(!f)return; 
+    const r=new FileReader(); 
+    r.onload=()=>{   
+        db=JSON.parse(r.result);   
+        save();location.reload(); 
+    }; 
+    r.readAsText(f);
 }
 
 if(db.settings.dark) document.body.classList.add('dark');
